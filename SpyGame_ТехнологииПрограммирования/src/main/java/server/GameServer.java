@@ -1,5 +1,10 @@
 package server;
 
+import gui.LoginScreen;
+import model.Player;
+
+import javax.swing.*;
+import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -13,7 +18,7 @@ import java.util.stream.Stream;
 public class GameServer {
     private ServerSocket ss;
     private int numPlayers;
-    private final int MAX_PLAYERS = 2;
+    private final int MAX_PLAYERS = 4;
 
     private final List<Integer> ids = new ArrayList<>();
     private final Map<Integer, Socket> sockets = new HashMap<>();
@@ -23,6 +28,8 @@ public class GameServer {
     private int spyId;
     private String imageName;
     private final List<String> images = new ArrayList<>();
+
+    private Map<Integer, String> nicknames = new HashMap<>();
 
     public GameServer() {
         System.out.println("-----Game Server-----");
@@ -47,12 +54,32 @@ public class GameServer {
                 System.out.println("Player number " + numPlayers + " has id #" + id);
                 ids.add(id);
                 sockets.put(id, s);
+
             }
             System.out.println("We now have" + MAX_PLAYERS + "players. No longer accepting connections");
         } catch (IOException e) {
             System.out.println("IOException from acceptConnections() in GameServer");
         }
     }
+
+//    public void createLoginScreen(int id) {
+//        LoginScreen loginScreen = new LoginScreen();
+//        ActionListener al = e -> {
+//            String nickname = loginScreen.getNameField().getText();
+//            if (nickname.length() == 0) {
+//                JOptionPane.showMessageDialog(loginScreen,
+//                        "Введите имя",
+//                        "Warning",
+//                        JOptionPane.PLAIN_MESSAGE);
+//                return;
+//            } else {
+//                nicknames.put(id, nickname);
+//                loginScreen.setVisible(false);
+//            }
+//        };
+//        loginScreen.getJoin().addActionListener(al);
+//        loginScreen.setVisible(true);
+//    }
 
     public void createServerSideConnections() {
         for (Integer id : ids) {

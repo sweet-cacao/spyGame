@@ -3,45 +3,69 @@ package gui;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public class MainScreen extends JFrame {
-    public JTextField textField;
-    public JButton button_2 = new JButton("Отправить вопрос");
+    public JTextField questionTextField;
+    public JTextField answerTextField;
+    public JButton sendQuestionBtn = new JButton("Отправить вопрос");
     public JTextArea textArea = new JTextArea(27, 101);
-    public JButton button_3 = new JButton("Правила");
+    public JButton rulesBtn = new JButton("Правила");
+    public JLabel nameOfGameLabel = new JLabel("SpyGame");
+    public List<Integer> ids;
+    public List<JButton> playerButtons = new ArrayList<>();
+    public int id;
+    public Map<Integer, String> names;
 
-    public MainScreen(String imageName) {
-        JLabel lblNewLabel_1 = new JLabel("SpyGame");
-        lblNewLabel_1.setFont(new Font("Courier", Font.PLAIN, 30));
+    public MainScreen(String imageName, int id, int spyId, List<Integer> ids, Map<Integer, String> names) {
+        this.ids = ids;
+        this.id = id;
+        this.names = names;
+        nameOfGameLabel.setFont(new Font("Courier", Font.PLAIN, 30));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setBounds(100, 100, 900, 600);
+        setBounds(100, 100, 900, 700);
         JPanel contentPane = new JPanel();
         contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
         setContentPane(contentPane);
         contentPane.setLayout(null);
 
-        MyDrawPanel panel = new MyDrawPanel(imageName);
-        this.getContentPane().add(panel);
+        MyDrawPanel imagePanel = new MyDrawPanel(imageName, id, spyId);
+        this.getContentPane().add(imagePanel);
 
-        JButton button = new JButton("Выход");
-        button.setBounds(743, 49, 117, 25);
-        contentPane.add(button);
+        JButton closeBtn = new JButton("Выход");
+        closeBtn.setBounds(743, 49, 117, 25);
+        contentPane.add(closeBtn);
 
-        JButton button_1 = new JButton("Собрание");
-        button_1.setBounds(437, 482, 148, 48);
-        contentPane.add(button_1);
+        JButton meetupBtn = new JButton("Собрание");
+        meetupBtn.setBounds(590, 29, 148, 48);
+        contentPane.add(meetupBtn);
 
-        button_2.setBounds(626, 480, 249, 25);
-        contentPane.add(button_2);
+        sendQuestionBtn.setBounds(626, 480, 249, 25);
+        contentPane.add(sendQuestionBtn);
 
-        textField = new JTextField();
-        textField.setBounds(626, 511, 249, 19);
-        contentPane.add(textField);
-        textField.setColumns(10);
+        JLabel answerLabel = new JLabel("Ответ");
+        answerLabel.setBounds(626, 511, 249, 19);
+        contentPane.add(answerLabel);
+
+        JLabel questionLabel = new JLabel("Вопрос");
+        questionLabel.setBounds(626, 560, 249, 19);
+        contentPane.add(questionLabel);
+
+        questionTextField = new JTextField();
+        questionTextField.setBounds(626, 590, 249, 19);
+        contentPane.add(questionTextField);
+        questionTextField.setColumns(10);
+
+        answerTextField = new JTextField();
+        answerTextField.setBounds(626, 530, 249, 19);
+        contentPane.add(answerTextField);
+        answerTextField.setColumns(10);
 
 
-        panel.setBounds(390, 101, 485, 369);
-        contentPane.add(panel);
+        imagePanel.setBounds(390, 101, 485, 369);
+        contentPane.add(imagePanel);
 
         textArea.setEditable(false); // set textArea non-editable
         JScrollPane scroll = new JScrollPane(textArea);
@@ -49,15 +73,44 @@ public class MainScreen extends JFrame {
         scroll.setBounds(27, 101, 318, 369);
         contentPane.add(scroll);
 
-        JLabel lblNewLabel = new JLabel("Чат");
-        lblNewLabel.setBounds(27, 27, 318, 48);
-        contentPane.add(lblNewLabel);
+        JLabel chatLabel = new JLabel("Чат");
+        chatLabel.setBounds(27, 27, 318, 48);
+        contentPane.add(chatLabel);
 
-        button_3.setBounds(743, 12, 117, 25);
-        contentPane.add(button_3);
+        rulesBtn.setBounds(743, 12, 117, 25);
+        contentPane.add(rulesBtn);
 
-        lblNewLabel_1.setBounds(350, 27, 196, 47);
-        contentPane.add(lblNewLabel_1);
-        button.addActionListener (e -> System.exit(0));
+        nameOfGameLabel.setBounds(350, 27, 196, 47);
+        contentPane.add(nameOfGameLabel);
+        closeBtn.addActionListener (e -> System.exit(0));
+
+        JPanel buttonsPanel = createButtonsPanelForChoosingPlayers();
+        buttonsPanel.setBounds(30, 480, 500, 120);
+        contentPane.add(buttonsPanel);
+    }
+
+    private JPanel createButtonsPanelForChoosingPlayers() {
+        JPanel playersPanel = new JPanel();
+        playersPanel.setLayout(new GridLayout(2,ids.size()));
+        names.forEach((k, v) -> {
+            if (!k.equals(id)) {
+                JButton button = new JButton(v);
+                playerButtons.add(button);
+//            button.addActionListener(this);
+                playersPanel.add(button);
+            }
+        });
+
+//        for(int i = 0 ; i < names.size(); i++)
+//        {
+//            if ( .equals(id)) {
+//                continue;
+//            }
+//            JButton button = new JButton(ids.get(i).toString());
+//            playerButtons.add(button);
+////            button.addActionListener(this);
+//            playersPanel.add(button);
+//        }
+        return playersPanel;
     }
 }

@@ -6,8 +6,12 @@ import java.awt.*;
 public class MyDrawPanel extends JPanel {
     private final String imageName;
 
-    public MyDrawPanel(String imageName) {
-        this.imageName = imageName;
+    public MyDrawPanel(String imageName, int id, int spyId) {
+        if (id == spyId) {
+            this.imageName = "src/main/resources/spy.png";
+        } else {
+            this.imageName = imageName;
+        }
     }
 
     public void paintComponent(Graphics g) {
