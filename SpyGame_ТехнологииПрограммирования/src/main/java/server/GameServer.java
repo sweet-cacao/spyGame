@@ -2,6 +2,7 @@ package server;
 
 import gui.LoginScreen;
 import model.Player;
+import utils.ConvertNumberToName;
 
 import javax.swing.*;
 import java.awt.event.ActionListener;
@@ -18,16 +19,17 @@ import java.util.stream.Stream;
 public class GameServer {
     private ServerSocket ss;
     private int numPlayers;
-    private final int MAX_PLAYERS = 4;
+    private final int MAX_PLAYERS = 3;
 
-    private final List<Integer> ids = new ArrayList<>();
-    private final Map<Integer, Socket> sockets = new HashMap<>();
-    private final Map<Integer, ServerSideConnection> serverSideConnections = new HashMap<>();
+    private final List<String> ids = new ArrayList<>();
+    private final Map<String, Socket> sockets = new HashMap<>();
+    private final Map<String, ServerSideConnection> serverSideConnections = new HashMap<>();
     private final int maxTurns;
 
-    private int spyId;
+    private String spyId;
     private String imageName;
     private final List<String> images = new ArrayList<>();
+    private final List<String> names = new ArrayList<>();
 
     private Map<Integer, String> nicknames = new HashMap<>();
 
@@ -49,12 +51,10 @@ public class GameServer {
                 Socket s = ss.accept();
                 numPlayers++;
                 System.out.println("Player #" + numPlayers + " has connected.");
-                int id = new UID().hashCode();
-                if (id < 1) { id *= -1; }
+                String id = ConvertNumberToName.giveRandomName();
                 System.out.println("Player number " + numPlayers + " has id #" + id);
                 ids.add(id);
                 sockets.put(id, s);
-
             }
             System.out.println("We now have" + MAX_PLAYERS + "players. No longer accepting connections");
         } catch (IOException e) {
@@ -82,7 +82,7 @@ public class GameServer {
 //    }
 
     public void createServerSideConnections() {
-        for (Integer id : ids) {
+        for (String id : ids) {
             serverSideConnections.put(id, new ServerSideConnection(sockets.get(id), id, maxTurns, ids, spyId, serverSideConnections, imageName));
             Thread t = new Thread(serverSideConnections.get(id));
             t.start();
@@ -100,6 +100,26 @@ public class GameServer {
         Random rnd = new Random();
         imageName = images.get(rnd.nextInt(images.size() - 1));
     }
+    private void check_all_players_connected() {
+        int i;
+        int size = serverSideConnections.size();
+        while (true) {
+            i = 0;
+            for (ServerSideConnection s :
+                    serverSideConnections.values()) {
+                if (s.reaadyString.equals("ready"))
+                    i++;
+            }
+            if (i == size) {
+                break;
+            }
+        }
+        for (ServerSideConnection s:
+                serverSideConnections.values()) {
+            s.isServerReady = true;
+        }
+
+    }
 
     public static void main(String[] args) {
         GameServer gs = new GameServer();
@@ -107,6 +127,7 @@ public class GameServer {
         gs.generateSpy();
         gs.generatePictureForPlayers();
         gs.createServerSideConnections();
+//        gs.check_all_players_connected();
     }
 
     private void getImages() {

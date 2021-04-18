@@ -14,12 +14,13 @@ public class MainScreen extends JFrame {
     public JTextArea textArea = new JTextArea(27, 101);
     public JButton rulesBtn = new JButton("Правила");
     public JLabel nameOfGameLabel = new JLabel("SpyGame");
-    public List<Integer> ids;
+    public List<String> ids;
     public List<JButton> playerButtons = new ArrayList<>();
-    public int id;
+    public String id;
     public Map<Integer, String> names;
+    public JButton meetupBtn = new JButton("Собрание");
 
-    public MainScreen(String imageName, int id, int spyId, List<Integer> ids, Map<Integer, String> names) {
+    public MainScreen(String imageName, String id, String spyId, List<String> ids, Map<Integer, String> names) {
         this.ids = ids;
         this.id = id;
         this.names = names;
@@ -38,7 +39,6 @@ public class MainScreen extends JFrame {
         closeBtn.setBounds(743, 49, 117, 25);
         contentPane.add(closeBtn);
 
-        JButton meetupBtn = new JButton("Собрание");
         meetupBtn.setBounds(590, 29, 148, 48);
         contentPane.add(meetupBtn);
 
@@ -90,11 +90,17 @@ public class MainScreen extends JFrame {
     }
 
     private JPanel createButtonsPanelForChoosingPlayers() {
+//        int i = 0;
+//        String[] namesRandom = {"Доктор", "Полицейский", "Художник", "Водитель", "Инженер", "Президент", "Депутат"};
+//        for (String integer : ids) {
+//            names.put(integer, namesRandom[i]);
+//            i++;
+//        }
         JPanel playersPanel = new JPanel();
         playersPanel.setLayout(new GridLayout(2,ids.size()));
-        names.forEach((k, v) -> {
+        ids.forEach(k -> {
             if (!k.equals(id)) {
-                JButton button = new JButton(v);
+                JButton button = new JButton(k);
                 playerButtons.add(button);
 //            button.addActionListener(this);
                 playersPanel.add(button);

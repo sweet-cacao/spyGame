@@ -14,16 +14,18 @@ import java.util.Map;
 public class ServerSideConnection implements Runnable{
     private DataInputStream dataIn;
     private DataOutputStream dataOut;
-    private int playerId;
+    private String playerId;
     private int maxTurns;
-    private List<Integer> ids;
-    public Map<Integer, ServerSideConnection> serverSideConnections;
+    private List<String> ids;
+    public Map<String, ServerSideConnection> serverSideConnections;
     private String imageName;
-    private int spyId;
+    private String spyId;
     private int  order = 0;
     private String nickname;
+    public boolean isServerReady = false;
+    public String reaadyString = "";
 
-    public ServerSideConnection(Socket socket, int playerId, int maxTurns, List<Integer> ids, int spyId, Map<Integer, ServerSideConnection> serverSideConnections, String imageName) {
+    public ServerSideConnection(Socket socket, String playerId, int maxTurns, List<String> ids, String spyId, Map<String, ServerSideConnection> serverSideConnections, String imageName) {
         this.playerId = playerId;
         this.maxTurns = maxTurns;
         this.spyId = spyId;
@@ -40,33 +42,42 @@ public class ServerSideConnection implements Runnable{
 
     public void run() {
         try {
-            dataOut.writeInt(playerId);
-            dataOut.writeInt(spyId);
+            dataOut.writeUTF(playerId);
+            dataOut.writeUTF(spyId);
             dataOut.writeUTF(imageName);
             dataOut.writeInt(maxTurns);
             dataOut.writeInt(ids.size());
-            for (Integer i : ids) {
-                dataOut.writeInt(i);
+            for (String i : ids) {
+                dataOut.writeUTF(i);
             }
 //            dataOut.writeInt(0);
             dataOut.flush();
-            nickname = dataIn.readUTF();
-            sendNicknames(nickname);
-            if (dataIn.readUTF().equals("ready")) {
-                sendQuestions("ready");
-            }
-            int readies = 0;
-            while (true) {
-                if (dataIn.readUTF().equals("ready")) {
-                    readies++;
-                }
-                if (readies == ids.size()) {
-                    break;
-                }
-            }
+//            nickname = dataIn.readUTF();
+//            sendNicknames(nickname);
+//            reaadyString = dataIn.readUTF();
+//            while (true) {
+//                if (isServerReady){
+//                    sendString("allClientsConnected");
+//                    break;
+//                }
+//            }
+//            if (dataIn.readUTF().equals("ready")) {
+//                sendQuestions("ready");
+//            }
+//            int readies = 0;
+//            while (true) {
+//                if (dataIn.readUTF().equals("ready")) {
+//                    readies++;
+//                }
+//                if (readies == ids.size()) {
+//                    break;
+//                }
+//                readies++;
+//            }
+
             while (true) {
                 String questionsString = dataIn.readUTF();
-                String playerToAnswerString = dataIn.readUTF();
+//                String playerToAnswerString = dataIn.readUTF();
                 if (questionsString != null &&  !questionsString.equals("order")) {
 //                    if (serverSideConnections.size() < order) {
 //                        order++;
@@ -75,7 +86,7 @@ public class ServerSideConnection implements Runnable{
 //                        order = 0;
 //                    }
                     sendQuestions(questionsString);
-                    sendQuestions(playerToAnswerString);
+//                    sendQuestions(playerToAnswerString);
                 }
             }
         } catch (IOException e) {
@@ -90,16 +101,16 @@ public class ServerSideConnection implements Runnable{
 
     private void sendQuestions(String questionsString) throws IOException {
         for (ServerSideConnection s2 : serverSideConnections.values()) {
-            System.out.println("QuestionString: " + questionsString);
+            System.out.println("QuestionString was sent be ssc: " + questionsString);
             s2.sendString(questionsString);
         }
     }
 
     private void sendNicknames(String questionsString) throws IOException {
         for (ServerSideConnection s2 : serverSideConnections.values()) {
-            System.out.println("QuestionString: " + questionsString);
-            s2.dataOut.writeInt(playerId);
-            s2.sendString(questionsString);
+            System.out.println("nickname: " + playerId + " " + questionsString);
+//            s2.dataOut.writeInt(playerId);
+            s2.sendString(playerId + " " + questionsString);
         }
     }
 

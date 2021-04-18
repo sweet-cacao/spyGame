@@ -8,16 +8,19 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 public class ClientSideConnection {
     private DataInputStream dataIn;
     private DataOutputStream dataOut;
-    public int playerId;
+    public String playerId;
     public String imageName;
-    public int id;
-    public int spyId;
-    public List<Integer> ids;
-    public Map<Integer, String> names = new HashMap<>();
+    public String id;
+    public String spyId;
+    public List<String> ids;
+    public ConcurrentMap<Integer, String> names = new ConcurrentHashMap<>();
+    public boolean areAllClientsReady = false;
 
     public ClientSideConnection(String nickname) {
         System.out.println("---Client---");
@@ -25,32 +28,43 @@ public class ClientSideConnection {
             Socket socket = new Socket("localhost", 51734);
             dataIn = new DataInputStream(socket.getInputStream());
             dataOut = new DataOutputStream(socket.getOutputStream());
-            playerId = dataIn.readInt();
+            playerId = dataIn.readUTF();
             id = playerId;
-            spyId = dataIn.readInt();
+            spyId = dataIn.readUTF();
             imageName = dataIn.readUTF();
             int maxTurns = dataIn.readInt();
             int size = dataIn.readInt();
             ids = new ArrayList<>();
             for (int i = 0; i < size; i++) {
-                ids.add(dataIn.readInt());
+                ids.add(dataIn.readUTF());
             }
 
-            dataOut.writeUTF(nickname);
-            dataOut.flush();
-            int j = 0;
+//            dataOut.writeUTF(nickname);
+//            dataOut.flush();
+//            int j = 0;
+//            int i = 0;
+//            while (i < size) {
+////                int mapId = dataIn.readInt();
+//                String mapFull = dataIn.readUTF();
+//                if (mapFull != null) {
+//                    String mapName = mapFull.split(" ")[1];
+//                    int mapId = Integer.parseInt(mapFull.split(" ")[0]);
+//                    System.out.println("The name was added" + mapId + " " + mapName);
+//                    names.put(mapId, mapName);
+//                    i++;
+//                }
+//            }
+//            dataOut.writeUTF("ready");
+//            dataOut.flush();
+//            if (dataIn.readUTF().equals("allClientsConnected")) {
+//                areAllClientsReady = true;
+//            }
+//            dataOut.flush();
+//            while (j < size) {
+//                dataIn.readUTF();
+//                j++;
+//            }
 
-            for (int i = 0; i < size; i++) {
-                int mapId = dataIn.readInt();
-                String mapName = dataIn.readUTF();
-                names.put(mapId, mapName);
-            }
-            dataOut.writeUTF("ready");
-            dataOut.flush();
-            while (j < size) {
-                dataIn.readUTF();
-                j++;
-            }
             System.out.println("Connected to server as player #" + playerId);
             System.out.println("maxturns" + maxTurns);
         } catch (Exception e) {

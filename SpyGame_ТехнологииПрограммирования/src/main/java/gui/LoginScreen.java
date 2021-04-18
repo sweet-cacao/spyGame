@@ -14,8 +14,8 @@ import java.awt.*;
 public class LoginScreen extends JFrame {
     private JButton join = new JButton("Присоединиться");
     private JButton exit = new JButton("Выход");
-    private JTextField nameField = new JTextField();
-    private JLabel labelName = new JLabel("Представьтесь: ");
+//    private JTextField nameField = new JTextField();
+    private JLabel labelName = new JLabel("Присоединяйтесь, как только остальные игроки будут готовы, начнется игра!");
     private JLabel labelGame = new JLabel("SpyGame");
 
     public LoginScreen() {
@@ -33,7 +33,7 @@ public class LoginScreen extends JFrame {
         JPanel midPanel = new JPanel();
         midPanel.setLayout(new GridLayout(2, 1));
         midPanel.add(labelName);
-        midPanel.add(nameField);
+//        midPanel.add(nameField);
         contentPane.add(midPanel);
 
         JPanel bottomPanel = new JPanel();
