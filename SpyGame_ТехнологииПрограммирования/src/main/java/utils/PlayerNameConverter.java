@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-public class ConvertNumberToName {
+public class PlayerNameConverter {
     public static String[] namesRandom = { "Доктор", "Полицейский", "Художник", "Водитель", "Инженер", "Президент", "Депутат", "Мэр", "Актер", "Блогер", "Певец"};
     static private int i = 0;
 

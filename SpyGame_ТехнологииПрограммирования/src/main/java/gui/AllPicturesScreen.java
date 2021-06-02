@@ -3,6 +3,7 @@ package gui;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -12,11 +13,15 @@ import java.util.List;
 import java.util.stream.Stream;
 
 // TODO добавить класс
+// TODO гасить все кнопки когда начинается собрание или шпион выбирает
+// TODO сделать таймер в целом для всей игры и если за опрееделнное время не успели то шпион отгадывает
 
 public class AllPicturesScreen extends JFrame {
     private final List<String> images = new ArrayList<>();
+    private final List<JButton> buttons = new ArrayList<>();
     private JLabel labelGame = new JLabel("SpyGame");
-    private JButton join = new JButton("Присоединиться");
+    public JButton join = new JButton("Присоединиться");
+    public String pictureName = "";
 
     public AllPicturesScreen() {
         getImages();
@@ -39,6 +44,8 @@ public class AllPicturesScreen extends JFrame {
         bottomPanel.setLayout(new GridLayout(1, 1));
         bottomPanel.add(join);
         contentPane.add(bottomPanel, BorderLayout.SOUTH);
+
+        setListenerForButtons();
     }
 
     private void getImages() {
@@ -50,11 +57,12 @@ public class AllPicturesScreen extends JFrame {
     }
 
     public JPanel createMidPanel() {
-
         JPanel midPanel = new JPanel();
         midPanel.setLayout(new GridLayout(2, images.size()));
         images.forEach(k -> {
             JButton b = new JButton();
+            buttons.add(b);
+            b.setName(k);
             JPanel p = new ImageForSpyScreen(k);
             p.setBorder(new EmptyBorder(5, 5, 5, 5));
             b.add(p);
@@ -64,6 +72,19 @@ public class AllPicturesScreen extends JFrame {
         });
         return midPanel;
 //        midPanel.add(nameField);
+    }
+
+    public void setListenerForButtons() {
+        ActionListener al = e -> {
+            JButton b = (JButton) e.getSource();
+            pictureName = b.getName();
+            System.out.println("Spy chosen picture " + pictureName);
+            buttons.forEach(btn -> btn.setEnabled(true));
+            b.setEnabled(false);
+        };
+        buttons.forEach(b -> {
+            b.addActionListener(al);
+        });
     }
 
         public static void main(String args[]) {

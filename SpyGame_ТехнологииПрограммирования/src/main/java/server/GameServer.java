@@ -1,18 +1,13 @@
 package server;
 
-import gui.LoginScreen;
-import model.Player;
-import utils.ConvertNumberToName;
+import utils.PlayerNameConverter;
 
-import javax.swing.*;
-import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.rmi.server.UID;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -51,7 +46,7 @@ public class GameServer {
                 Socket s = ss.accept();
                 numPlayers++;
                 System.out.println("Player #" + numPlayers + " has connected.");
-                String id = ConvertNumberToName.giveRandomName();
+                String id = PlayerNameConverter.giveRandomName();
                 System.out.println("Player number " + numPlayers + " has id #" + id);
                 ids.add(id);
                 sockets.put(id, s);

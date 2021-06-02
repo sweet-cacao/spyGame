@@ -1,10 +1,11 @@
 package model;
 
 import client.ClientSideConnection;
-import gui.LoginScreen;
-import gui.MainScreen;
-import gui.ResultScreen;
-import gui.VoteScreen;
+import gui.*;
+import lombok.Getter;
+import utils.InternalMessage;
+import utils.PlayerQueue;
+import utils.VoteCounter;
 
 import javax.swing.*;
 import java.awt.event.ActionListener;
@@ -13,6 +14,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Getter
 public class Player {
     public static final String NO_VOTE = "noVote";
     private ClientSideConnection csc;
@@ -22,18 +24,22 @@ public class Player {
     private String imageName;
     private int order = 0;
     public List<String> ids;
-    private String playerToAnswerChoosen = "";
-    private String playerToAnswer;
+   // private String playerToAnswerChoosen = "";
+    //private String playerToAnswer;
     private String nickname;
+    private AllPicturesScreen allPicturesScreen;
     // TODO нужно сделать отсчет времени игры и ограничить ее, плюс поставить ограничение на кнопку собрание
 
     public VoteScreen voteScreen = null;
     private Double timeLeft = 23000.0;
     private javax.swing.Timer timer;
 
-    int noVote = 0;
-    int spyVotes = 0;
-    int otherVotes = 0;
+//    int noVote = 0;
+//    int spyVotes = 0;
+//    int otherVotes = 0;
+    private final VoteCounter voteCounter = new VoteCounter();
+    private final PlayerQueue queue = new PlayerQueue();
+    private MessageHandler handler;
 
     public Player(int w, int h) {
         turnsMade = 0;
@@ -43,7 +49,8 @@ public class Player {
         csc = new ClientSideConnection(nickname);
         imageName = csc.imageName;
         ids = csc.ids;
-        playerToAnswer = ids.get(0);
+        queue.setPlayerToAnswer(ids.get(0));
+        handler = new MessageHandler(this);
     }
 
     public void createMainScreen(String imageName) {
@@ -77,7 +84,7 @@ public class Player {
                         JOptionPane.PLAIN_MESSAGE);
                 return;
             }
-            if (playerToAnswerChoosen.length() == 0) {
+            if (queue.getPlayerToAnswerChoosen().length() == 0) {
                 JOptionPane.showMessageDialog(frame,
                         "Выберите игрока, которому хотите задать вопрос",
                         "Warning",
@@ -89,10 +96,10 @@ public class Player {
             turnsMade++;
             System.out.println("turnsMade = " + turnsMade);
             try {
-                csc.sendQuestion(question + "#" + playerToAnswerChoosen);
+                csc.sendQuestion(question + "#" + queue.getPlayerToAnswerChoosen());
 //                csc.sendOrder(order);
 //                csc.sendPlayerToAnswer(playerToAnswerChoosen);
-                playerToAnswerChoosen = "";
+                queue.setPlayerToAnswerChoosen("");
 //                updateOrder();
             } catch (IOException ioException) {
                 ioException.printStackTrace();
@@ -105,7 +112,7 @@ public class Player {
     public void setListenerForPlayerButtons() {
         ActionListener al = e -> {
             JButton b = (JButton) e.getSource();
-            playerToAnswerChoosen = b.getText();
+            queue.setPlayerToAnswerChoosen(b.getText());
         };
         for (int i = 0; i < frame.playerButtons.size(); i++) {
             frame.playerButtons.get(i).addActionListener(al);
@@ -114,19 +121,70 @@ public class Player {
 
     public void setListenerForMeetingButton() {
         ActionListener al = e -> {
-            try {
-                csc.sendQuestion("Meeting");
-            } catch (IOException exc) {
-                System.out.println("IOException was thrown");
-            }
-            voteScreen = new VoteScreen(ids);
-            voteScreen.setVisible(true);
-            createTimer();
+            JButton btn = (JButton) e.getSource();
+            if (btn.getText().equals("Собрание")) {
+                try {
+                    csc.sendQuestion("Meeting");
+                } catch (IOException exc) {
+                    System.out.println("IOException was thrown");
+                }
+                voteScreen = new VoteScreen(ids);
+                voteScreen.setVisible(true);
+                createTimer();
 //            frame.turnOffAllButtons();
-            // TODO здесь по таймеру через 40 секунд собираются результаты и формируется команда победителя
-            // TODO Можно еще не выключать кнопки и оставить чат
+                // TODO здесь по таймеру через 40 секунд собираются результаты и формируется команда победителя
+                // TODO Можно еще не выключать кнопки и оставить чат
+            } else {
+                try {
+                    csc.sendQuestion("FindPicture");
+                } catch (IOException exc) {
+                    System.out.println("IOException was thrown");
+                }
+                allPicturesScreen = new AllPicturesScreen();
+                setActionListenerForAllPicturesScreenEndBtn();
+                allPicturesScreen.setVisible(true);
+                // TODO здесь еще надо прикрутить таймер ограничивающий время шпиона на ответ
+            }
         };
         frame.meetupBtn.addActionListener(al);
+    }
+
+    public void setActionListenerForAllPicturesScreenEndBtn() {
+        ActionListener al = e -> {
+            JButton btn = (JButton) e.getSource();
+            if (allPicturesScreen.pictureName.length() != 0) {
+                try {
+                    csc.sendQuestion("spyAnswer:" + allPicturesScreen.pictureName);
+                } catch (IOException ioException) {
+                    ioException.printStackTrace();
+                }
+            } else {
+                try {
+                    csc.sendQuestion("spyAnswer:not chosen");
+                } catch (IOException ioException) {
+                    ioException.printStackTrace();
+                }
+            }
+//            if (allPicturesScreen.pictureName.equals(imageName)) {
+//                try {
+//                    csc.sendQuestion("spyAnswer:победил шпион");
+//                } catch (IOException ioException) {
+//                    ioException.printStackTrace();
+//                }
+//                // отослать всем сообщение о выигрыше
+//            } else {
+//                try {
+//                    csc.sendQuestion("spyAnswer:победили горожане");
+//                } catch (IOException ioException) {
+//                    ioException.printStackTrace();
+//                }
+//                // отослать всем сообщение о проигрыше
+//            }
+            // по результатам сообщения у всех игроков сформировать экран результата
+        };
+        if (csc.playerId.equals(csc.spyId)) {
+            allPicturesScreen.join.addActionListener(al);
+        }
     }
 
     private void createTimer() {
@@ -149,7 +207,7 @@ public class Player {
                 }
                 voteScreen.setVisible(false);
                 while (true) {
-                    String res = countResult();
+                    String res = voteCounter.countResult(ids);
                     if (!res.equals("no")) {
                         createResultScreen(res);
                         break;
@@ -169,58 +227,45 @@ public class Player {
         frame.setVisible(false);
     }
 
-    private String countResult() {
-        int allVotes = noVote + spyVotes + otherVotes;
-        if (allVotes == ids.size()) {
-            if (noVote == ids.size() || otherVotes >= spyVotes) {
-                return "Победил шпион";
-            } else {
-                return "Победили горожане";
-            }
-        } else {
-            return "no";
-        }
-    }
+
 
     private void updateQuestionPanel() throws IOException {
         System.out.println("Try to update panel in Player");
         try {
-            String q = csc.getQuestion();
-            if (q != null) {
-                String[] l = q.split(":");
-                if (l.length == 2 && l[0].equals("vote")) {
-                    if (l[1].equals(NO_VOTE)) {
-                        noVote++;
-                        System.out.println(noVote);
-                    } else if (l[1].equals(csc.spyId)) {
-                        spyVotes++;
-                        System.out.println(spyVotes);
-                    } else {
-                        otherVotes++;
-                        System.out.println(otherVotes);
-                    }
-                    return;
-                }
-                else if (q.equals("Meeting") && voteScreen == null) {
-                    frame.meetupBtn.doClick();
-                    return;
-                }
-                List<String> list = Arrays.stream(q.split("#")).collect(Collectors.toList());
-                playerToAnswer = list.get(list.size() - 1);
-                int len = playerToAnswer.length() + 1;
-                int all = q.length();
-                int last = all - len;
-                String real_q = q.substring(0, last);
-                frame.textArea.setText(frame.textArea.getText() + real_q);
-            }
+            handler.handle(csc.getQuestion());
         }
         catch (Exception exc) {
             System.out.println("exc as thrown");
         }
     }
 
+    void handlePlayerMessage(String q) {
+        String question = extractQuestion(q);
+        frame.textArea.setText(frame.textArea.getText() + question);
+    }
+
+    void addVote(InternalMessage message) {
+        voteCounter.addVote(message, csc.spyId);
+    }
+
+    void initiateMeetingForAllPlayers() {
+        if (!csc.id.equals(csc.spyId)) {
+            frame.meetupBtn.doClick();
+        }
+    }
+
+    private String extractQuestion(String q) {
+        List<String> list = Arrays.stream(q.split("#")).collect(Collectors.toList());
+        queue.setPlayerToAnswer(list.get(list.size() - 1));
+        int len = queue.getPlayerToAnswer().length() + 1;
+        int all = q.length();
+        int last = all - len;
+        return q.substring(0, last);
+    }
+
+
     private void updatePlayerLabel() {
-        if (csc.playerId.equals(playerToAnswer)) {
+        if (csc.playerId.equals(queue.getPlayerToAnswer())) {
             frame.nameOfGameLabel.setText("Your turn");
         } else {
             frame.nameOfGameLabel.setText("Wait for your turn");
@@ -228,13 +273,12 @@ public class Player {
     }
 
     private void updatePlayerButtons() {
-        frame.sendQuestionBtn.setEnabled(csc.playerId.equals(playerToAnswer));
+        frame.sendQuestionBtn.setEnabled(csc.playerId.equals(queue.getPlayerToAnswer()));
     }
 
     public static void launch(LoginScreen screen) {
         Player p = new Player(500, 100);
         p.connectToServer();
-
 //                writeNamesToFile(nickname, csc.id);
         p.createMainScreen(p.imageName);
         screen.setVisible(false);

@@ -18,12 +18,17 @@ public class MainScreen extends JFrame {
     public List<JButton> playerButtons = new ArrayList<>();
     public String id;
     public Map<Integer, String> names;
-    public JButton meetupBtn = new JButton("Собрание");
+    public JButton meetupBtn ;
 
     public MainScreen(String imageName, String id, String spyId, List<String> ids, Map<Integer, String> names) {
         this.ids = ids;
         this.id = id;
         this.names = names;
+        if (id.equals(spyId)) {
+            meetupBtn = new JButton("Угадать картинку");
+        } else {
+            meetupBtn = new JButton("Собрание");
+        }
         nameOfGameLabel.setFont(new Font("Courier", Font.PLAIN, 30));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setBounds(100, 100, 900, 700);
