@@ -1,4 +1,7 @@
-package gui;
+package gui.screen;
+
+import gui.ImageForSpyScreen;
+import model.Player;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -71,7 +74,6 @@ public class AllPicturesScreen extends JFrame {
             p.setMaximumSize(new Dimension(600, 300));
         });
         return midPanel;
-//        midPanel.add(nameField);
     }
 
     public void setListenerForButtons() {
@@ -87,8 +89,23 @@ public class AllPicturesScreen extends JFrame {
         });
     }
 
-        public static void main(String args[]) {
-        JFrame frame = new AllPicturesScreen();
-        frame.setVisible(true);
+    public void setActionListenerForAllPicturesScreenEndBtn(Player player) {
+        ActionListener al = e -> {
+            if (this.pictureName.length() != 0) {
+                try {
+                    player.getCsc().sendString("spyAnswer:" + this.pictureName);
+                } catch (IOException ioException) {
+                    ioException.printStackTrace();
+                }
+            } else {
+                try {
+                    player.getCsc().sendString("spyAnswer:not chosen");
+                } catch (IOException ioException) {
+                    ioException.printStackTrace();
+                }
+            }
+        };
+        join.addActionListener(al);
     }
+
 }

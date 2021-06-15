@@ -1,17 +1,11 @@
-package model;
+package model.message;
 
 import client.ClientSideConnection;
-import gui.ResultScreen;
-import utils.ActionNames;
-import utils.InternalMessage;
-import utils.PlayerQueue;
+import gui.screen.DefaultOneLabelScreen;
+import model.Player;
+import model.PlayerQueue;
+import model.utils.Constants;
 import utils.VoteCounter;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static model.Player.NO_VOTE;
 
 public class MessageHandler {
     private Player player;
@@ -33,16 +27,32 @@ public class MessageHandler {
                 createResultScreen(message);
                 break;
             case VOTE:
-                player.addVote(message);
+                player.getVoteCounter().addVote(message, player.getCsc().spyId);
                 break;
             case FIND_PICTURE:
                 findPicture();
                 break;
             case MEETING:
-                player.initiateMeetingForAllPlayers();
+                if (message.getValue().equals(Constants.CREATE_VOTE_SCREEN)) {
+                    if (csc.id.equals(csc.spyId)) {
+                        if (player.getWaitScreen() == null) {
+                            DefaultOneLabelScreen waitScreen = new DefaultOneLabelScreen(Constants.WAIT_SCREEN_OTHER_PLAYERS);
+                            waitScreen.setVisible(true);
+                            player.getMainScreen().setVisible(false);
+                            player.setWaitScreen(waitScreen);
+                        }
+                    } else {
+                        player.getMainScreen().meetupBtn.doClick();
+                    }
+                }
+                if (csc.id.equals(csc.spyId) && message.getValue().equals(Constants.WIN_MESSAGE) || message.getValue().equals(Constants.LOOSE_MESSAGE)) {
+                    player.finalizeGame(message.getValue());
+                }
                 break;
             case PLAYER_MESSAGE:
-                player.handlePlayerMessage(q);
+                PlayerMessage m = new PlayerMessage(q);
+                player.getQueue().setPlayerToAnswer(m.getNextPlayerToAnswer());
+                player.getMainScreen().updateChat(m.getMessage());
                 break;
             default:
                 break;
@@ -50,19 +60,22 @@ public class MessageHandler {
     }
 
     private void findPicture() {
+        if (!csc.id.equals(csc.spyId)) {
+            DefaultOneLabelScreen waitScreen = new DefaultOneLabelScreen(Constants.WAIT_SCREEN_SPY);
+            waitScreen.setVisible(true);
+            player.setWaitScreen(waitScreen);
+            player.getMainScreen().setVisible(false);
+        }
     }
-
 
     private void createResultScreen(InternalMessage message) {
         // TODO надо пробросить еще название нормального изображения в объекте шпиона
         // TODO лучше сделать реализацию проверки до отправки в классе шпиона
-        ResultScreen resultScreen;
         if (message.getValue().equals(csc.imageName)) {
-            resultScreen = new ResultScreen(csc.spyId, "победил шпион");
+            player.finalizeGame(Constants.LOOSE_MESSAGE);
         } else {
-            resultScreen = new ResultScreen(csc.spyId, "победили горожане");
+            player.finalizeGame(Constants.WIN_MESSAGE);
         }
-        resultScreen.setVisible(true);
         // TODO сформировать экран результата
     }
 
@@ -73,8 +86,12 @@ public class MessageHandler {
         else if (message.getType().equals("vote")) {
             return ActionNames.VOTE;
         }
-        else if (message.getType().equals("Meeting") && player.getVoteScreen() == null) {
-            return ActionNames.MEETING;
+        else if (message.getType().equals("Meeting")) {
+            if (player.getVoteScreen() == null) {
+                return ActionNames.MEETING;
+            } else {
+                return ActionNames.NO_ACTION;
+            }
         }
         else if (message.getType().equals("FindPicture")) {
             return ActionNames.FIND_PICTURE;
@@ -82,18 +99,6 @@ public class MessageHandler {
         else if (!message.getType().isEmpty()){
             return ActionNames.PLAYER_MESSAGE;
         }
-        return null;
-    }
-
-    private void voteMessage() {
-
-    }
-
-    private void votingScreenMessage() {
-
-    }
-
-    private void chatMessage() {
-
+        return ActionNames.NO_ACTION;
     }
 }

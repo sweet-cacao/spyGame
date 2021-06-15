@@ -1,4 +1,4 @@
-package utils;
+package model.message;
 
 import lombok.Data;
 
@@ -13,7 +13,7 @@ public class InternalMessage {
             if (l.length == 2) {
                 type = l[0];
                 value = l[1];
-            } else {
+            } else if (q.contains("#")){
                 type = "playerMessage";
             }
         }

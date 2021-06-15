@@ -1,52 +1,45 @@
 package model;
 
 import client.ClientSideConnection;
-import gui.*;
+import gui.screen.*;
 import lombok.Getter;
-import utils.InternalMessage;
-import utils.PlayerQueue;
+import lombok.Setter;
+import model.message.MessageHandler;
 import utils.VoteCounter;
 
-import javax.swing.*;
-import java.awt.event.ActionListener;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Getter
 public class Player {
     public static final String NO_VOTE = "noVote";
+
     private ClientSideConnection csc;
-    private int turnsMade;
-    private MainScreen frame;
-    private final String questions = "";
     private String imageName;
-    private int order = 0;
     public List<String> ids;
-   // private String playerToAnswerChoosen = "";
-    //private String playerToAnswer;
-    private String nickname;
-    private AllPicturesScreen allPicturesScreen;
+
     // TODO нужно сделать отсчет времени игры и ограничить ее, плюс поставить ограничение на кнопку собрание
 
+    // screens
+    private DefaultOneLabelScreen resultScreen;
+    @Setter
     public VoteScreen voteScreen = null;
-    private Double timeLeft = 23000.0;
-    private javax.swing.Timer timer;
+    @Setter
+    private AllPicturesScreen allPicturesScreen;
+    private MainScreen mainScreen;
+    @Setter
+    private DefaultOneLabelScreen waitScreen;
 
-//    int noVote = 0;
-//    int spyVotes = 0;
-//    int otherVotes = 0;
+    // utils
     private final VoteCounter voteCounter = new VoteCounter();
     private final PlayerQueue queue = new PlayerQueue();
     private MessageHandler handler;
 
     public Player(int w, int h) {
-        turnsMade = 0;
     }
 
     public void connectToServer() {
-        csc = new ClientSideConnection(nickname);
+        csc = new ClientSideConnection();
         imageName = csc.imageName;
         ids = csc.ids;
         queue.setPlayerToAnswer(ids.get(0));
@@ -54,14 +47,15 @@ public class Player {
     }
 
     public void createMainScreen(String imageName) {
-       frame = new MainScreen(imageName, csc.id, csc.spyId, ids, csc.names);
-       frame.setVisible(true);
+       mainScreen = new MainScreen(imageName, csc.id, csc.spyId, ids, csc.names);
+       mainScreen.setVisible(true);
         Thread t = new Thread(() -> {
             try {
                 while (true) {
-                    updateQuestionPanel();
-                    updatePlayerLabel();
-                    updatePlayerButtons();
+                    System.out.println("Try to update Player");
+                    handler.handle(csc.getString());
+                    mainScreen.updatePlayerLabel(csc.playerId, queue.getPlayerToAnswer());
+                    mainScreen.updatePlayerButtons(csc.playerId, queue.getPlayerToAnswer());
                 }
             } catch (IOException ioException) {
                 ioException.printStackTrace();
@@ -70,220 +64,28 @@ public class Player {
         t.start();
     }
 
-    public void setListenerForButtons() {
-        ActionListener al = e -> {
-            JButton b = (JButton) e.getSource();
-            String textButton = b.getText();
-            if (textButton.equals("Правила")) {
-                JOptionPane.showMessageDialog(frame,
-                        "В комнате собираются игроки. Как только набирается 10 человек, запускается игра. Каждому игроку, кроме одного, раздаются карточки с одной и той же локацией. Одному игроку достается карточка шпион.\n" +
-                                "Далее игроки по очереди задают друг другу вопросы о локации, пытаясь догадаться, кто шпион. Цель игры сотоит в том, чтобы найти шпиона и не дать ему раньше понять, какая именно локация.\n" +
-                                "Если один из игроков догадался, он может поднять руку, начать обсуждение в чате и устроить голосование. Если игроки догадались, кто шпион, он пробует угадать локацию.\n" +
-                                "Шпион также может остановить игру и попробовать угадать локацию раньше.",
-                        "Правила",
-                        JOptionPane.PLAIN_MESSAGE);
-                return;
-            }
-            if (queue.getPlayerToAnswerChoosen().length() == 0) {
-                JOptionPane.showMessageDialog(frame,
-                        "Выберите игрока, которому хотите задать вопрос",
-                        "Warning",
-                        JOptionPane.PLAIN_MESSAGE);
-                return;
-            }
-            String answer = "#" + csc.playerId + " Ответ: " + frame.answerTextField.getText() + "\n\n";
-            String question = answer + "#" + csc.playerId + " : " + frame.questionTextField.getText() + "\n";
-            turnsMade++;
-            System.out.println("turnsMade = " + turnsMade);
-            try {
-                csc.sendQuestion(question + "#" + queue.getPlayerToAnswerChoosen());
-//                csc.sendOrder(order);
-//                csc.sendPlayerToAnswer(playerToAnswerChoosen);
-                queue.setPlayerToAnswerChoosen("");
-//                updateOrder();
-            } catch (IOException ioException) {
-                ioException.printStackTrace();
-            }
-        };
-        frame.sendQuestionBtn.addActionListener(al);
-        frame.rulesBtn.addActionListener(al);
-    }
-
-    public void setListenerForPlayerButtons() {
-        ActionListener al = e -> {
-            JButton b = (JButton) e.getSource();
-            queue.setPlayerToAnswerChoosen(b.getText());
-        };
-        for (int i = 0; i < frame.playerButtons.size(); i++) {
-            frame.playerButtons.get(i).addActionListener(al);
+    public void finalizeGame(String res) {
+        if (resultScreen == null) {
+            resultScreen = DefaultOneLabelScreen.DefaultOneLableScreen(csc.spyId, res);
+            resultScreen.setVisible(true);
         }
-    }
-
-    public void setListenerForMeetingButton() {
-        ActionListener al = e -> {
-            JButton btn = (JButton) e.getSource();
-            if (btn.getText().equals("Собрание")) {
-                try {
-                    csc.sendQuestion("Meeting");
-                } catch (IOException exc) {
-                    System.out.println("IOException was thrown");
-                }
-                voteScreen = new VoteScreen(ids);
-                voteScreen.setVisible(true);
-                createTimer();
-//            frame.turnOffAllButtons();
-                // TODO здесь по таймеру через 40 секунд собираются результаты и формируется команда победителя
-                // TODO Можно еще не выключать кнопки и оставить чат
-            } else {
-                try {
-                    csc.sendQuestion("FindPicture");
-                } catch (IOException exc) {
-                    System.out.println("IOException was thrown");
-                }
-                allPicturesScreen = new AllPicturesScreen();
-                setActionListenerForAllPicturesScreenEndBtn();
-                allPicturesScreen.setVisible(true);
-                // TODO здесь еще надо прикрутить таймер ограничивающий время шпиона на ответ
-            }
-        };
-        frame.meetupBtn.addActionListener(al);
-    }
-
-    public void setActionListenerForAllPicturesScreenEndBtn() {
-        ActionListener al = e -> {
-            JButton btn = (JButton) e.getSource();
-            if (allPicturesScreen.pictureName.length() != 0) {
-                try {
-                    csc.sendQuestion("spyAnswer:" + allPicturesScreen.pictureName);
-                } catch (IOException ioException) {
-                    ioException.printStackTrace();
-                }
-            } else {
-                try {
-                    csc.sendQuestion("spyAnswer:not chosen");
-                } catch (IOException ioException) {
-                    ioException.printStackTrace();
-                }
-            }
-//            if (allPicturesScreen.pictureName.equals(imageName)) {
-//                try {
-//                    csc.sendQuestion("spyAnswer:победил шпион");
-//                } catch (IOException ioException) {
-//                    ioException.printStackTrace();
-//                }
-//                // отослать всем сообщение о выигрыше
-//            } else {
-//                try {
-//                    csc.sendQuestion("spyAnswer:победили горожане");
-//                } catch (IOException ioException) {
-//                    ioException.printStackTrace();
-//                }
-//                // отослать всем сообщение о проигрыше
-//            }
-            // по результатам сообщения у всех игроков сформировать экран результата
-        };
-        if (csc.playerId.equals(csc.spyId)) {
-            allPicturesScreen.join.addActionListener(al);
+        mainScreen.setVisible(false);
+        if (voteScreen != null) {
+            voteScreen.setVisible(false);
         }
-    }
-
-    private void createTimer() {
-        ActionListener countDown = e -> {
-            timeLeft -= 100;
-            if (timeLeft <= 0) {
-                timer.stop();
-                if (voteScreen.playerIsSpy.length() == 0) {
-                    try {
-                        csc.sendQuestion("vote:" + NO_VOTE);
-                    } catch (IOException ioException) {
-                        ioException.printStackTrace();
-                    }
-                } else {
-                    try {
-                        csc.sendQuestion("vote:" + voteScreen.playerIsSpy);
-                    } catch (IOException ioException) {
-                        ioException.printStackTrace();
-                    }
-                }
-                voteScreen.setVisible(false);
-                while (true) {
-                    String res = voteCounter.countResult(ids);
-                    if (!res.equals("no")) {
-                        createResultScreen(res);
-                        break;
-                    }
-                }
-
-            }
-        };
-        timer = new javax.swing.Timer(100, countDown);
-        timer.start();
-    }
-
-    private void createResultScreen(String res) {
-        ResultScreen resultScreen = new ResultScreen(csc.spyId, res);
-        resultScreen.setVisible(true);
-        voteScreen.setVisible(false);
-        frame.setVisible(false);
-    }
-
-
-
-    private void updateQuestionPanel() throws IOException {
-        System.out.println("Try to update panel in Player");
-        try {
-            handler.handle(csc.getQuestion());
+        if (waitScreen != null) {
+            waitScreen.setVisible(false);
         }
-        catch (Exception exc) {
-            System.out.println("exc as thrown");
+        if (allPicturesScreen != null) {
+            allPicturesScreen.setVisible(false);
         }
-    }
-
-    void handlePlayerMessage(String q) {
-        String question = extractQuestion(q);
-        frame.textArea.setText(frame.textArea.getText() + question);
-    }
-
-    void addVote(InternalMessage message) {
-        voteCounter.addVote(message, csc.spyId);
-    }
-
-    void initiateMeetingForAllPlayers() {
-        if (!csc.id.equals(csc.spyId)) {
-            frame.meetupBtn.doClick();
-        }
-    }
-
-    private String extractQuestion(String q) {
-        List<String> list = Arrays.stream(q.split("#")).collect(Collectors.toList());
-        queue.setPlayerToAnswer(list.get(list.size() - 1));
-        int len = queue.getPlayerToAnswer().length() + 1;
-        int all = q.length();
-        int last = all - len;
-        return q.substring(0, last);
-    }
-
-
-    private void updatePlayerLabel() {
-        if (csc.playerId.equals(queue.getPlayerToAnswer())) {
-            frame.nameOfGameLabel.setText("Your turn");
-        } else {
-            frame.nameOfGameLabel.setText("Wait for your turn");
-        }
-    }
-
-    private void updatePlayerButtons() {
-        frame.sendQuestionBtn.setEnabled(csc.playerId.equals(queue.getPlayerToAnswer()));
     }
 
     public static void launch(LoginScreen screen) {
         Player p = new Player(500, 100);
         p.connectToServer();
-//                writeNamesToFile(nickname, csc.id);
         p.createMainScreen(p.imageName);
         screen.setVisible(false);
-        p.setListenerForButtons();
-        p.setListenerForPlayerButtons();
-        p.setListenerForMeetingButton();
+        p.mainScreen.setListenerForMeetingButton(p);
     }
 }

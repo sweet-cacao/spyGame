@@ -1,9 +1,4 @@
-package utils;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+package model.utils;
 
 public class PlayerNameConverter {
     public static String[] namesRandom = { "Доктор", "Полицейский", "Художник", "Водитель", "Инженер", "Президент", "Депутат", "Мэр", "Актер", "Блогер", "Певец"};

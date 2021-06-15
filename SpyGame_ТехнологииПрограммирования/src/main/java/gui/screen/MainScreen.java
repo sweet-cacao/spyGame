@@ -1,8 +1,15 @@
-package gui;
+package gui.screen;
+
+import gui.listener.main.screen.MeetupButtonListener;
+import gui.MyDrawPanel;
+import gui.listener.main.screen.RulesButtonListener;
+import gui.listener.main.screen.SendQuestionListener;
+import model.Player;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +21,7 @@ public class MainScreen extends JFrame {
     public JTextArea textArea = new JTextArea(27, 101);
     public JButton rulesBtn = new JButton("Правила");
     public JLabel nameOfGameLabel = new JLabel("SpyGame");
+    public JLabel playerName;
     public List<String> ids;
     public List<JButton> playerButtons = new ArrayList<>();
     public String id;
@@ -29,6 +37,7 @@ public class MainScreen extends JFrame {
         } else {
             meetupBtn = new JButton("Собрание");
         }
+
         nameOfGameLabel.setFont(new Font("Courier", Font.PLAIN, 30));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setBounds(100, 100, 900, 700);
@@ -36,6 +45,10 @@ public class MainScreen extends JFrame {
         contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
         setContentPane(contentPane);
         contentPane.setLayout(null);
+
+        playerName = new JLabel(id);
+        playerName.setBounds(127, 27, 80, 48);
+        this.getContentPane().add(playerName);
 
         MyDrawPanel imagePanel = new MyDrawPanel(imageName, id, spyId);
         this.getContentPane().add(imagePanel);
@@ -95,33 +108,47 @@ public class MainScreen extends JFrame {
     }
 
     private JPanel createButtonsPanelForChoosingPlayers() {
-//        int i = 0;
-//        String[] namesRandom = {"Доктор", "Полицейский", "Художник", "Водитель", "Инженер", "Президент", "Депутат"};
-//        for (String integer : ids) {
-//            names.put(integer, namesRandom[i]);
-//            i++;
-//        }
         JPanel playersPanel = new JPanel();
         playersPanel.setLayout(new GridLayout(2,ids.size()));
         ids.forEach(k -> {
             if (!k.equals(id)) {
                 JButton button = new JButton(k);
                 playerButtons.add(button);
-//            button.addActionListener(this);
                 playersPanel.add(button);
             }
         });
-
-//        for(int i = 0 ; i < names.size(); i++)
-//        {
-//            if ( .equals(id)) {
-//                continue;
-//            }
-//            JButton button = new JButton(ids.get(i).toString());
-//            playerButtons.add(button);
-////            button.addActionListener(this);
-//            playersPanel.add(button);
-//        }
         return playersPanel;
+    }
+
+    public void updatePlayerLabel(String playerId, String playerToAnswer) {
+        if (playerId.equals(playerToAnswer)) {
+            nameOfGameLabel.setText("Your turn");
+        } else {
+            nameOfGameLabel.setText("Wait for your turn");
+        }
+    }
+
+    public void updatePlayerButtons(String playerId, String playerToAnswer) {
+        sendQuestionBtn.setEnabled(playerId.equals(playerToAnswer));
+    }
+
+    public void updateChat(String question) {
+        textArea.setText(textArea.getText() + question);
+    }
+
+    public void setListenerForMeetingButton(Player player) {
+        ActionListener l = new MeetupButtonListener(player);
+        meetupBtn.addActionListener(l);
+        l = new RulesButtonListener(player.getMainScreen());
+        rulesBtn.addActionListener(l);
+        l = new SendQuestionListener(player);
+        sendQuestionBtn.addActionListener(l);
+        ActionListener al = e -> {
+            JButton b = (JButton) e.getSource();
+            player.getQueue().setPlayerToAnswerChoosen(b.getText());
+        };
+        for (int i = 0; i < player.getMainScreen().playerButtons.size(); i++) {
+            player.getMainScreen().playerButtons.get(i).addActionListener(al);
+        }
     }
 }

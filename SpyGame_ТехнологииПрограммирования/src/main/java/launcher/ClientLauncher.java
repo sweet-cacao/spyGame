@@ -1,6 +1,6 @@
 package launcher;
 
-import gui.LoginScreen;
+import gui.screen.LoginScreen;
 import model.Player;
 
 import java.awt.event.ActionListener;

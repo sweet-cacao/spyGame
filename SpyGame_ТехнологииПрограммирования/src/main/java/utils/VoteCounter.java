@@ -1,5 +1,8 @@
 package utils;
 
+import model.message.InternalMessage;
+import model.utils.Constants;
+
 import java.util.List;
 
 import static model.Player.NO_VOTE;
@@ -26,9 +29,9 @@ public class VoteCounter {
         int allVotes = noVote + spyVotes + otherVotes;
         if (allVotes == (ids.size()-1)) {
             if (noVote == ids.size() || otherVotes >= spyVotes) {
-                return "Победил шпион";
+                return Constants.LOOSE_MESSAGE;
             } else {
-                return "Победили горожане";
+                return Constants.WIN_MESSAGE;
             }
         } else {
             return "no";

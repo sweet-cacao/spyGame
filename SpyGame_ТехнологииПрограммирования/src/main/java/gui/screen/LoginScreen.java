@@ -1,4 +1,4 @@
-package gui;
+package gui.screen;
 
 import lombok.Data;
 
@@ -14,7 +14,6 @@ import java.awt.*;
 public class LoginScreen extends JFrame {
     private JButton join = new JButton("Присоединиться");
     private JButton exit = new JButton("Выход");
-//    private JTextField nameField = new JTextField();
     private JLabel labelName = new JLabel("Присоединяйтесь, как только остальные игроки будут готовы, начнется игра!");
     private JLabel labelGame = new JLabel("SpyGame");
 
@@ -33,7 +32,6 @@ public class LoginScreen extends JFrame {
         JPanel midPanel = new JPanel();
         midPanel.setLayout(new GridLayout(2, 1));
         midPanel.add(labelName);
-//        midPanel.add(nameField);
         contentPane.add(midPanel);
 
         JPanel bottomPanel = new JPanel();
@@ -41,9 +39,4 @@ public class LoginScreen extends JFrame {
         bottomPanel.add(join);
         contentPane.add(bottomPanel);
     }
-
-//    public static void main(String args[]) {
-//        JFrame frame = new LoginScreen();
-//        frame.setVisible(true);
-//    }
 }
